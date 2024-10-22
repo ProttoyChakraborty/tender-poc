@@ -4,6 +4,8 @@ from utils.llm_client import LLMClient
 from utils.sotr_construction import SOTRMarkdown
 from utils.markdown_utils_experimental import PDFMarkdown
 from utils.compliance_check import ComplianceChecker
+from utils.system_prompt import tender_qa_chat_prompt
+from utils.styles import chat_container_style
 import os
 import tempfile
 import io
@@ -14,6 +16,10 @@ from datetime import datetime
 import json
 import re
 import requests
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
 
 load_dotenv()
 
@@ -310,41 +316,12 @@ def tender_qa_tab(llm_client) -> None:
         tender_qa_chat_container(llm_client, st.session_state["tender_markdown"])
 
 def tender_qa_chat_container(llm_client, markdown_text) -> None:
-    st.markdown("""
-        <style>
-        .element-container:has(.stChatInput) {
-            position: fixed;
-            left: 50%;
-            bottom: 20px;
-            transform: translate(-50%, -50%);
-            margin: 0 auto;
-            z-index: 1000;
-        }
-        .stChatInput {
-            flex-wrap: nowrap;
-        }
-        .json-response {
-            background-color: rgba(38, 39, 48, 0.5);
-            border-radius: 0.5rem;
-            padding: 10px;
-            margin-top: 10px;
-        }
-        .json-key {
-            color: #ff6c6c;
-            font-weight: bold;
-            font-style: italic;
-        }
-        .json-value {
-            color: #fafafa;
-        }
-        .json-list {
-            margin-left: 20px;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-
+    logging.info("Entering tender_qa_chat_container function")
+    
+    st.markdown(chat_container_style, unsafe_allow_html=True)
     if "messages" not in st.session_state:
         st.session_state.messages = []
+        logging.info("Initialized messages in session state")
 
     chat_container = st.container()
 
@@ -360,47 +337,14 @@ def tender_qa_chat_container(llm_client, markdown_text) -> None:
                             st.markdown("Raw response:")
                             st.markdown(message['content']['raw_response'])
                         else:
-                            st.markdown('<p class="json-key">Answer:</p>', unsafe_allow_html=True)
-                            st.write(message['content']['answer'])
-                            
-                            st.markdown('<p class="json-key">References:</p>', unsafe_allow_html=True)
-                            for ref in message['content']["references"]:
-                                st.markdown(f"""
-    <style>
-    .reference-box {{
-        background-color: #1E1E1E;
-        border: 1px solid #4682b4;
-        border-radius: 0.5rem;
-        padding: 10px;
-        margin-top: 10px;
-    }}
-    .reference-key {{
-        font-weight: bold;
-        color: #ff6c6c;
-    }}
-    .reference-value {{
-        color: #ffffff;
-    }}
-    </style>
-    <div class="reference-box">
-        <p><span class="reference-key">Page:</span> <span class="reference-value">{ref.get('page', 'N/A')}</span></p>
-        <p><span class="reference-key">Section:</span> <span class="reference-value">{ref.get('section', 'N/A')}</span></p>
-        <p><span class="reference-key">SL Number:</span> <span class="reference-value">{ref.get('sl_number', 'N/A')}</span></p>
-    </div>
-""", unsafe_allow_html=True)
-                                st.code(ref.get('reference_text', 'No reference text available'), language="text")
-                            
-                            st.markdown('<p class="json-key">Reasoning:</p>', unsafe_allow_html=True)
-                            st.write(message['content']['reasoning'])
-                            
-                            st.markdown('<p class="json-key">Compliance Status:</p>', unsafe_allow_html=True)
-                            st.write(message['content']['compliance_status'])
+                            render_chat_history(message['content'])
 
     spinner_placeholder = st.empty()
 
     prompt = st.chat_input("Ask a question about the tender document")
 
     if prompt:
+        logging.info(f"User input: {prompt}")
         st.session_state.messages.append({"role": "user", "content": prompt})
         
         with chat_container:
@@ -411,135 +355,25 @@ def tender_qa_chat_container(llm_client, markdown_text) -> None:
             with st.spinner("Answering..."):
                 try:
                     response = llm_client.call_llm(
-                        system_prompt = f"""You are an AI assistant specialized in analyzing tender documents. Your task is to answer questions based on the extracted text from a tender document. Follow these instructions carefully:
+                        system_prompt = f"""
+                        {tender_qa_chat_prompt}
 
-Extract the page numbers from the markdown text using the format 'Page X' and include them in the reference section.
-Analyze the provided extracted text from the tender document, focusing on sections that indicate:
+                        Here is the extracted text from the tender document:
+                        {markdown_text}
 
-Acceptance (compliance) with the tender requirements
-Deviation (non-compliance) from the tender requirements
-
-Answer the given question based solely on the information in the extracted text, and always check for references in the compliance matrix.
-Provide your response in JSON format with the following structure:
-{{
-  "answer": "Your concise answer to the question",
-  "references": [
-    {{
-      "page": "Page number where reference is found",
-      "section": "Section number/identifier",
-      "sl_number": "Serial/Line number if applicable", 
-      "reference_text": "Exact quote from the document"
-    }}
-  ],
-  "reasoning": "Step-by-step reasoning for the answer using the provided references",
-  "compliance_status": "Compliant or Non-Compliant based on the references"
-}}
-
-For the references array:
-Include all relevant quotes that support your answer.
-Each quote must be exact and include page number, section, and SL number.
-Structure each reference as an object with page, section, sl_number, and reference_text fields.
-
-In the reasoning field:
-Explain step-by-step how you arrived at your answer.
-Reference specific quotes from the document.
-Show clear logical progression.
-
-For the compliance_status field:
-Provide a clear judgment: either "Compliant" or "Non-Compliant."
-Base this strictly on the information in the references.
-
-If the question cannot be answered from the provided text:
-State this clearly in the "answer" field.
-Explain why in the "reasoning" field.
-List any relevant but insufficient references.
-
-Here is the extracted text from the tender document:
-{markdown_text}
-
-Now, provide your answer based on the given extracted text and question, ensuring it is in the correct JSON format.
-""",
-                        user_prompt=prompt
+                        Now, provide your answer based on the given extracted text and question, ensuring it is in the correct JSON format.
+                        """,
+                        user_prompt=prompt,
+                        max_tokens=8000
                     )
 
                     if response is None:
                         st.warning("Rate limit reached. Please try again later.")
                         return
-
-                    json_start = response.find('{')
-                    json_end = response.rfind('}')
-                    if json_start == -1 or json_end == -1:
-                        raise ValueError("No valid JSON object found in the response")
-
-                    json_string = response[json_start:json_end+1]
                     
-                    json_string = re.sub(r'[\x00-\x1F\x7F-\x9F]|(?<!\\)\\(?!["\\\/bfnrt])|[\ud800-\udfff]|"\s*(?:(?![\x20-\x7E]).)*\s*"',
-                                         lambda m: '' if re.match(r'[\x00-\x1F\x7F-\x9F]', m.group()) else
-                                                   '\\n' if m.group() == '\n' else
-                                                   '\\r' if m.group() == '\r' else
-                                                   '\\t' if m.group() == '\t' else
-                                                   '\\b' if m.group() == '\b' else
-                                                   '\\f' if m.group() == '\f' else
-                                                   m.group().encode('unicode_escape').decode() if re.match(r'[\ud800-\udfff]', m.group()) else
-                                                   '',
-                                         json_string)
+                    print("LLM Raw Response", response)
 
-                    try:
-                        json_response = json.loads(json_string)
-                    except json.JSONDecodeError:
-                        json_string = json_string.replace("'", '"')
-                        json_string = re.sub(r',\s*}', '}', json_string)
-                        json_string = re.sub(r',\s*]', ']', json_string)
-                        try:
-                            json_string = clean_json_string(json_string)
-                            json_response = json.loads(json_string)
-                        except json.JSONDecodeError:
-                            raise ValueError("Unable to parse JSON response after attempted fixes")
-
-                    required_keys = ["answer", "references", "reasoning", "compliance_status"]
-                    if not all(key in json_response for key in required_keys):
-                        missing_keys = [key for key in required_keys if key not in json_response]
-                        raise ValueError(f"JSON response is missing required keys: {', '.join(missing_keys)}")
-
-                    st.session_state.messages.append({"role": "assistant", "content": json_response})
-
-                    with chat_container:
-                        with st.chat_message("assistant"):
-                            st.markdown('<p class="json-key">Answer:</p>', unsafe_allow_html=True)
-                            st.write(json_response['answer'])
-                            
-                            st.markdown('<p class="json-key">References:</p>', unsafe_allow_html=True)
-                            for ref in json_response["references"]:
-                                st.markdown(f"""
-    <style>
-    .reference-box {{
-        background-color: #1E1E1E;
-        border: 1px solid #4682b4;
-        border-radius: 0.5rem;
-        padding: 10px;
-        margin-top: 10px;
-    }}
-    .reference-key {{
-        font-weight: bold;
-        color: #ff6c6c;
-    }}
-    .reference-value {{
-        color: #ffffff;
-    }}
-    </style>
-    <div class="reference-box">
-        <p><span class="reference-key">Page:</span> <span class="reference-value">{ref.get('page', 'N/A')}</span></p>
-        <p><span class="reference-key">Section:</span> <span class="reference-value">{ref.get('section', 'N/A')}</span></p>
-        <p><span class="reference-key">SL Number:</span> <span class="reference-value">{ref.get('sl_number', 'N/A')}</span></p>
-    </div>
-""", unsafe_allow_html=True)
-                                st.code(ref.get('reference_text', 'No reference text available'), language="text")
-                            
-                            st.markdown('<p class="json-key">Reasoning:</p>', unsafe_allow_html=True)
-                            st.write(json_response['reasoning'])
-                            
-                            st.markdown('<p class="json-key">Compliance Status:</p>', unsafe_allow_html=True)
-                            st.write(json_response['compliance_status'])
+                    process_llm_response(response)
 
                 except (ValueError, json.JSONDecodeError) as e:
                     error_message = f"Error processing response: {str(e)}"
@@ -576,6 +410,126 @@ def clean_json_string(json_string):
         print(f"JSON parsing error: {str(e)}")
         print(f"Problematic JSON string: {json_string}")
         raise
+
+def process_llm_response(response):
+    st.markdown(chat_container_style, unsafe_allow_html=True)
+    try:
+        # Find the JSON object in the response
+        json_start = response.find('{')
+        json_end = response.rfind('}')
+        if json_start == -1 or json_end == -1:
+            raise ValueError("No valid JSON object found in the response")
+
+        json_string = response[json_start:json_end+1]
+        
+        # Clean the JSON string
+        json_string = clean_json_string(json_string)
+        
+        # Parse the JSON
+        json_response = json.loads(json_string)
+
+        # Validate required keys
+        required_keys = ["metadata", "compliance_question", "technical_offer_evidence", "compliance_assessment"]
+        missing_keys = [key for key in required_keys if key not in json_response]
+        if missing_keys:
+            raise ValueError(f"JSON response is missing required keys: {', '.join(missing_keys)}")
+
+        # Add the response to session state
+        st.session_state.messages.append({"role": "assistant", "content": json_response})
+
+        # Render the response
+        with st.chat_message("assistant"):
+            render_chat_response(json_response)
+
+    except json.JSONDecodeError as e:
+        error_message = f"Error decoding JSON: {str(e)}"
+        handle_error(error_message, response)
+    except ValueError as e:
+        error_message = f"Value error: {str(e)}"
+        handle_error(error_message, response)
+    except KeyError as e:
+        error_message = f"Missing key in JSON: {str(e)}"
+        handle_error(error_message, response)
+    except Exception as e:
+        error_message = f"An unexpected error occurred: {str(e)}"
+        handle_error(error_message, response)
+
+def handle_error(error_message, raw_response):
+    st.warning(error_message)
+    st.session_state.messages.append({"role": "assistant", "content": {"error": error_message, "raw_response": raw_response}})
+    with st.chat_message("assistant"):
+        st.warning(error_message)
+        st.markdown("Raw response:")
+        st.code(raw_response if raw_response else "No response received", language="json")
+
+def render_chat_response(json_response):
+    # Metadata
+    st.markdown('<p class="json-key">Vendor Name:</p>', unsafe_allow_html=True)
+    st.write(json_response.get('metadata', {}).get('vendor_name', 'N/A'))
+
+    # Compliance Question
+    st.markdown('<p class="json-key">Compliance Question:</p>', unsafe_allow_html=True)
+    st.write(json_response.get('compliance_question', {}).get('original_question', 'N/A'))
+    
+    with st.expander("Key Elements"):
+        for element in json_response.get('compliance_question', {}).get('key_elements', []):
+            st.markdown(f"- **{element.get('type', 'N/A').capitalize()}:** {element.get('requirement', 'N/A')}")
+
+    # Technical Offer Evidence
+    st.markdown('<p class="json-key">Technical Offer Evidence:</p>', unsafe_allow_html=True)
+    for evidence in json_response.get('technical_offer_evidence', []):
+        st.markdown(f"""
+        <div class="reference-box">
+            <p><span class="reference-key">Page:</span> <span class="reference-value">{evidence.get('page', 'N/A')}</span></p>
+            <p><span class="reference-key">Section:</span> <span class="reference-value">{evidence.get('section', 'N/A')}</span></p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.code(evidence.get('text', 'No evidence text available'), language="text")
+
+    # Compliance Assessment
+    st.markdown('<p class="json-key">Compliance Assessment:</p>', unsafe_allow_html=True)
+    st.write(json_response.get('compliance_assessment', {}).get('assessment', 'N/A'))
+    
+    st.markdown('<p class="json-key">Compliance Status:</p>', unsafe_allow_html=True)
+    st.write(json_response.get('compliance_assessment', {}).get('status', 'N/A'))
+
+def render_chat_history(history):
+    #st.markdown(chat_container_style, unsafe_allow_html=True)
+    st.markdown('<p class="json-key">Answer:</p>', unsafe_allow_html=True)
+    st.write(history['answer'])
+    
+    st.markdown('<p class="json-key">References:</p>', unsafe_allow_html=True)
+    for ref in history["references"]:
+        st.markdown(f"""
+    <style>
+    .reference-box {{
+        background-color: #1E1E1E;
+        border: 1px solid #4682b4;
+        border-radius: 0.5rem;
+        padding: 10px;
+        margin-top: 10px;
+    }}
+    .reference-key {{
+        font-weight: bold;
+        color: #ff6c6c;
+    }}
+    .reference-value {{
+        color: #ffffff;
+    }}
+    </style>
+    <div class="reference-box">
+        <p><span class="reference-key">Page:</span> <span class="reference-value">{ref.get('page', 'N/A')}</span></p>
+        <p><span class="reference-key">Section:</span> <span class="reference-value">{ref.get('section', 'N/A')}</span></p>
+        <p><span class="reference-key">SL Number:</span> <span class="reference-value">{ref.get('sl_number', 'N/A')}</span></p>
+    </div>
+""", unsafe_allow_html=True)
+        st.code(ref.get('reference_text', 'No reference text available'), language="text")
+    
+    st.markdown('<p class="json-key">Reasoning:</p>', unsafe_allow_html=True)
+    st.write(history['reasoning'])
+    
+    st.markdown('<p class="json-key">Compliance Status:</p>', unsafe_allow_html=True)
+    st.write(history['compliance_status'])
 
 def compliance_matrix_tab():
     st.write("<div style='text-align: center; font-size: 24px; margin-top: 100px;'>Compliance Check</div>", unsafe_allow_html=True)

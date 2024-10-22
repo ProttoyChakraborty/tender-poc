@@ -1,0 +1,166 @@
+PS D:\LMN\Projects\tender-poc> streamlit run demo.py
+
+  You can now view your Streamlit app in your browser.
+
+  Local URL: http://localhost:8501
+  Network URL: http://192.168.0.101:8501
+
+INFO:root:Entering tender_qa_chat_container function
+INFO:root:Initialized messages in session state
+INFO:root:Entering tender_qa_chat_container function
+INFO:root:User input: Does the bid address how the proposed equipment meets the general and environmental specifications of the ship (e.g., heat load, noise, vibration, shock requirements) as specified in Chapter 1 and subsequent chapters of the SOTR?
+INFO:httpx:HTTP Request: POST https://api.anthropic.com/v1/messages "HTTP/1.1 200 OK"
+LLM Raw Response {
+  "metadata": {
+    "vendor_name": "Kirloskar Pneumatic Company Limited"
+  },
+  
+  "compliance_question": {
+    "original_question": "Does the bid address how the proposed equipment meets the general and environmental specifications of the ship (e.g., heat load, noise, vibration, shock requirements) as specified in Chapter 1 and subsequent chapters of the SOTR?",
+    "key_elements": [
+      {
+        "type": "technical",
+        "requirement": "Meeting general specifications"
+      },
+      {
+        "type": "environmental",
+        "requirement": "Meeting environmental specifications"
+      },
+      {
+        "type": "performance",
+        "requirement": "Meeting heat load requirements"
+      },
+      {
+        "type": "technical",
+        "requirement": "Meeting noise requirements"
+      },
+      {
+        "type": "technical",
+        "requirement": "Meeting vibration requirements"
+      },
+      {
+        "type": "technical",
+        "requirement": "Meeting shock requirements"
+      }
+    ]
+  },
+
+  "search_parameters": {
+    "primary_terms": [
+      "environmental specifications",
+      "heat load",
+      "noise",
+      "vibration",
+      "shock"
+    ],
+    "related_terms": [
+      "SOTR",
+      "Chapter 1",
+      "general specifications",
+      "environmental conditions"
+    ],
+    "equipment_names": [
+      "refrigeration plant",
+      "compressor"
+    ],
+    "performance_metrics": [
+      "temperature",
+      "humidity",
+      "salinity"
+    ]
+  },
+
+  "technical_offer_evidence": {
+    "references": [
+      {
+        "section": "1.0",
+        "page_number": "6",
+        "verbatim_quote": "Environmental conditions for design Cooling medium for condenser : Seawater Design temperature for seawater inlet : 20 to 35°C Electrical Power Supply : 415 V, 3 Ph, 50 Hz",
+        "specifications": {
+          "parameter": "seawater_temperature",
+          "value": "20 to 35°C"
+        }
+      },
+      {
+        "section": "2.0",
+        "page_number": "7-9",
+        "verbatim_quote": "We have calculated heat load based on the basis of NES 111.",
+        "specifications": {
+          "parameter": "heat_load_calculation_standard",
+          "value": "NES 111"
+        }
+      }
+    ]
+  },
+
+  "compliance_matrix_evidence": {
+    "references": [
+      {
+        "sotr_clause": "18",
+        "page_number": "33",
+        "statement": "(m)Environmental Condition: The main equipment should the specified duly under the following ambient conditions: a. Ambient temperature ranges of 20 to 40 ° C. b. Water temperature range of 20 to 35° C. c. Max relative humidity 90 % at 32°C. d. Salinity of water up to 35 ppt.",
+        "response": "ACC",
+        "remarks": "",
+        "verbatim_quote": "(m)Environmental Condition: The main equipment should the specified duly under the following ambient conditions: a. Ambient temperature ranges of 20 to 40 ° C. b. Water temperature range of 20 to 35° C. c. Max relative humidity 90 % at 32°C. d. Salinity of water up to 35 ppt."
+      },
+      {
+        "sotr_clause": "35",
+        "page_number": "34",
+        "statement": "(c)SBN, ABN & vibration trial as applicable shall be carried out during FAT. The limiting values for ABN and SBN to meet the platform values are indicated at Appendix 1 & 2. Compliance to meet the promulgated SBN and ABN values are to be to be submitted in the technical offer.",
+        "response": "ACC",
+        "remarks": "SBN & ABN measurements shall be undertaken at part load capacities available for compressor (50% & 100%)",
+        "verbatim_quote": "(c)SBN, ABN & vibration trial as applicable shall be carried out during FAT. The limiting values for ABN and SBN to meet the platform values are indicated at Appendix 1 & 2. Compliance to meet the promulgated SBN and ABN values are to be to be submitted in the technical offer."
+      },
+      {
+        "sotr_clause": "68",
+        "page_number": "37",
+        "statement": "(xxiii)Shock standards: Equipment and its associated auxiliaries/accessories/controls shall meet shock standards as per NSS II.",
+        "response": "DEV",
+        "remarks": "We have enclosed shock test certificate of the plant supplied to Indian Navy. We have not considered physical shock test for the equipment. In case physical shock testing is to be done, the cost of prototype plant is not considered in the quoted price.",        
+        "verbatim_quote": "(xxiii)Shock standards: Equipment and its associated auxiliaries/accessories/controls shall meet shock standards as per NSS II."
+      }
+    ]
+  },
+
+  "deviation_analysis": {
+    "has_deviations": true,
+    "deviations": [
+      {
+        "source_document": "Compliance Matrix",
+        "reference": "Clause 68",
+        "verbatim_quote": "We have enclosed shock test certificate of the plant supplied to Indian Navy. We have not considered physical shock test for the equipment. In case physical shock testing is to be done, the cost of prototype plant is not considered in the quoted price.", 
+        "impact_assessment": "The vendor has not included physical shock testing in their offer, which may impact the ability to verify compliance with NSS II shock standards. This could potentially affect the equipment's performance under shock conditions."
+      }
+    ]
+  },
+
+  "conclusion": {
+    "compliance_status": "Needs Clarification",
+    "clarifications_needed": [
+      {
+        "topic": "Shock testing",
+        "reason": "Vendor has not included physical shock testing in their offer, which is required to meet NSS II standards"
+      },
+      {
+        "topic": "Noise and vibration compliance",
+        "reason": "While vendor agrees to conduct SBN and ABN measurements, more details on compliance with specific noise and vibration requirements are needed"
+      }
+    ],
+    "recommendations": [
+      {
+        "recommendation": "Request vendor to provide detailed compliance statement for all environmental specifications mentioned in SOTR Chapter 1",
+        "priority": "High"
+      },
+      {
+        "recommendation": "Clarify with vendor the implications of not including physical shock testing and discuss options for meeting NSS II standards",
+        "priority": "High"
+      },
+      {
+        "recommendation": "Request more detailed information on how the equipment meets specific noise and vibration requirements",
+        "priority": "Medium"
+      }
+    ]
+  }
+}
+JSON parsing error: Expecting property name enclosed in double quotes: line 1 column 4 (char 3)
+Problematic JSON string: {  \"metadata": {    \"vendor_name": \"Kirloskar Pneumatic Company Limited"  },    \"compliance_question": {    \"original_question": \"Does the bid address how the proposed equipment meets the general and environmental specifications of the ship (e.g., heat load, noise, vibration, shock requirements) as specified in Chapter 1 and subsequent chapters of the SOTR?",    \"key_elements": [      {        \"type": \"technical",        \"requirement": \"Meeting general specifications"      },      {        \"type": \"environmental",        \"requirement": \"Meeting environmental specifications"      },      {        \"type": \"performance",        \"requirement": \"Meeting heat load requirements"      },      {        \"type": \"technical",        \"requirement": \"Meeting noise requirements"      },      {        \"type": \"technical",        \"requirement": \"Meeting vibration requirements"      },      {        \"type": \"technical",        \"requirement": \"Meeting shock requirements"      }    ]  },    \"search_parameters": {    \"primary_terms": [      \"environmental specifications",      \"heat load",      \"noise",      \"vibration",      \"shock"    ],    \"related_terms": [      \"SOTR",      \"Chapter 1",      \"general specifications",      \"environmental conditions"    ],    \"equipment_names": [      \"refrigeration plant",      \"compressor"    ],    \"performance_metrics": [      \"temperature",      \"humidity",      \"salinity"    ]  },    \"technical_offer_evidence": {    \"references": [      {        \"section": \"1.0",        \"page_number": \"6",        \"verbatim_quote": \"Environmental conditions for design Cooling medium for condenser : Seawater Design temperature for seawater inlet : 20 to 35°C Electrical Power Supply : 415 V, 3 Ph, 50 Hz",        \"specifications": {          \"parameter": \"seawater_temperature",          \"value": \"20 to 35°C"        }      },      {        \"section": \"2.0",        \"page_number": \"7-9",        \"verbatim_quote": \"We have calculated heat load based on the basis of NES 111.",        \"specifications": {          \"parameter": \"heat_load_calculation_standard",          \"value": \"NES 111"        }      }    ]  },    \"compliance_matrix_evidence": {    \"references": [      {        \"sotr_clause": \"18",        \"page_number": \"33",        \"statement": \"(m)Environmental Condition: The main equipment should the specified duly under the following ambient conditions: a. Ambient temperature ranges of 20 to 40 ° C. b. Water temperature range of 20 to 35° C. c. Max relative humidity 90 % at 32°C. d. Salinity of water up to 35 ppt.",        \"response": \"ACC",        \"remarks": \"",        \"verbatim_quote": \"(m)Environmental Condition: The main equipment should the specified duly under the following ambient conditions: a. Ambient temperature ranges of 20 to 40 ° C. b. Water temperature range of 20 to 35° C. c. Max relative humidity 90 % at 32°C. d. Salinity of water up to 35 ppt."      },      {        \"sotr_clause": \"35",        \"page_number": \"34",        \"statement": \"(c)SBN, ABN & vibration trial as applicable shall be carried out during FAT. The limiting values for ABN and SBN to meet the platform values are indicated at Appendix 1 & 2. Compliance to meet the promulgated SBN and ABN values are to be to be submitted in the technical offer.",        \"response": \"ACC",        \"remarks": \"SBN & ABN measurements shall be undertaken at part load capacities available for compressor (50% & 100%)",        \"verbatim_quote": \"(c)SBN, ABN & vibration trial as applicable shall be carried out during FAT. The limiting values for ABN and SBN to meet the platform values are indicated at Appendix 1 & 2. Compliance to meet the promulgated SBN and ABN values are to be to be submitted in the technical offer."      },      {        \"sotr_clause": \"68",        \"page_number": \"37",        \"statement": \"(xxiii)Shock standards: Equipment and its associated auxiliaries/accessories/controls shall meet shock standards as per NSS II.",        \"response": \"DEV",        \"remarks": \"We have enclosed shock test certificate of the plant supplied to Indian Navy. We have not considered physical shock test for the equipment. In case physical shock testing is to be done, the cost of prototype plant is not considered in the quoted price.",        \"verbatim_quote": \"(xxiii)Shock standards: Equipment and its associated auxiliaries/accessories/controls shall meet shock standards as per NSS II."      }    ]  },    \"deviation_analysis": {    \"has_deviations": true,    \"deviations": [      {        \"source_document": \"Compliance Matrix",        \"reference": \"Clause 68",        \"verbatim_quote": \"We have enclosed shock test certificate of the plant supplied to Indian Navy. We have not considered physical shock test for the equipment. In case physical shock testing is to be done, the cost of prototype plant is not considered in the quoted price.",        \"impact_assessment": \"The vendor has not included physical shock testing in their offer, which may impact the ability to verify compliance with NSS II shock standards. This could potentially affect the equipment"s performance under shock conditions.\"      }    ]  },    "conclusion\": {    "compliance_status\": "Needs Clarification\",    "clarifications_needed\": [      {        "topic\": "Shock testing\",        "reason\": "Vendor has not included physical shock testing in their offer, which is required to meet NSS II standards\"      },      {        "topic\": "Noise and vibration compliance\",        "reason\": "While vendor agrees to conduct SBN and ABN measurements, more details on compliance with specific noise and vibration requirements are needed\"      }    ],    "recommendations\": [      {        "recommendation\": "Request vendor to provide detailed compliance statement for all environmental specifications mentioned in SOTR Chapter 1\",        "priority\": "High\"      },      {        "recommendation\": "Clarify with vendor the implications of not including physical shock testing and discuss options for meeting NSS II standards\",        "priority\": "High\"      },      {        "recommendation\": "Request more detailed information on how the equipment meets specific noise and vibration requirements\",        "priority\": "Medium\"      }    ]  }}
